@@ -1,0 +1,10 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Generated static site (GitHub Actions will rebuild it)
+html_output/
+
+# Local workspace state
+.workbuddy/
+.codebuddy/

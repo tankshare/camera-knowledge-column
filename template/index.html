@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摄像机硬件科普系列 - 第{{ISSUE_NUMBER}}期</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 60px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .series-badge {
+            background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #8b949e;
+        }
+
+        .progress-bar {
+            width: 120px;
+            height: 6px;
+            background: #30363d;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #238636 0%, #2ea043 100%);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* 主布局 */
+        .main-container {
+            display: flex;
+            margin-top: 60px;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* 左侧导航栏 */
+        .sidebar {
+            width: 320px;
+            background: #0d1117;
+            border-right: 1px solid #30363d;
+            overflow-y: auto;
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            left: 0;
+        }
+
+        .sidebar-content {
+            padding: 16px 0;
+        }
+
+        .module-section {
+            margin-bottom: 8px;
+        }
+
+        .module-header {
+            padding: 12px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .module-status {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #238636;
+            color: white;
+        }
+
+        .module-status.pending {
+            background: #30363d;
+            color: #8b949e;
+        }
+
+        .module-status.progress {
+            background: #d29922;
+            color: #0d1117;
+        }
+
+        .article-list {
+            list-style: none;
+        }
+
+        .article-item {
+            position: relative;
+        }
+
+        .article-link {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px 10px 32px;
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .article-link:hover {
+            background: #161b22;
+            color: #c9d1d9;
+        }
+
+        .article-link.active {
+            background: #1f6feb20;
+            color: #58a6ff;
+            border-left-color: #58a6ff;
+        }
+
+        .article-link.completed {
+            color: #c9d1d9;
+        }
+
+        .article-link.completed::before {
+            content: "✓";
+            position: absolute;
+            left: 12px;
+            color: #238636;
+            font-size: 11px;
+        }
+
+        .article-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 20px;
+            background: #30363d;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 10px;
+            color: #8b949e;
+        }
+
+        .article-link.active .article-number {
+            background: #58a6ff;
+            color: #0d1117;
+        }
+
+        .article-link.completed .article-number {
+            background: #238636;
+            color: white;
+        }
+
+        .article-title-short {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 右侧内容区 */
+        .content-area {
+            flex: 1;
+            margin-left: 320px;
+            padding: 32px 48px;
+            max-width: 900px;
+        }
+
+        .article-header {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .issue-badge {
+            background: linear-gradient(135deg, #8957e5 0%, #6e40c9 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .category-tag {
+            background: #30363d;
+            color: #8b949e;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .article-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #f0f6fc;
+            line-height: 1.3;
+            margin-bottom: 16px;
+        }
+
+        .article-subtitle {
+            font-size: 16px;
+            color: #8b949e;
+            line-height: 1.6;
+        }
+
+        .article-tags {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        .tag-icon {
+            font-size: 14px;
+        }
+
+        /* 文章内容 */
+        .article-content {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #c9d1d9;
+        }
+
+        .article-content h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin: 40px 0 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .article-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin: 28px 0 16px;
+        }
+
+        .article-content h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #58a6ff;
+            margin: 20px 0 12px;
+        }
+
+        .article-content p {
+            margin-bottom: 16px;
+        }
+
+        .article-content strong {
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+
+        .article-content em {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        .article-content ul, .article-content ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        .article-content li {
+            margin-bottom: 8px;
+        }
+
+        .article-content blockquote {
+            border-left: 4px solid #58a6ff;
+            padding: 12px 20px;
+            margin: 20px 0;
+            background: #161b22;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #8b949e;
+        }
+
+        .article-content code {
+            background: #30363d;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: "SF Mono", Monaco, monospace;
+            font-size: 13px;
+            color: #ff7b72;
+        }
+
+        .article-content pre {
+            background: #161b22;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #30363d;
+        }
+
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #c9d1d9;
+        }
+
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .article-content th {
+            background: #161b22;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #f0f6fc;
+            border-bottom: 2px solid #30363d;
+        }
+
+        .article-content td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .article-content tr:hover td {
+            background: #161b22;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .article-content a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+
+        .article-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* 信息框 */
+        .info-box {
+            background: linear-gradient(135deg, #1f6feb20 0%, #388bfd10 100%);
+            border: 1px solid #1f6feb40;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tip-box {
+            background: linear-gradient(135deg, #23863620 0%, #2ea04310 100%);
+            border: 1px solid #23863640;
+        }
+
+        .tip-box .info-box-title {
+            color: #3fb950;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #d2992220 0%, #e3b34110 100%);
+            border: 1px solid #d2992240;
+        }
+
+        .warning-box .info-box-title {
+            color: #e3b341;
+        }
+
+        /* 底部导航 */
+        .article-footer {
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #21262d;
+            border-radius: 8px;
+            color: #c9d1d9;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: #30363d;
+            color: #f0f6fc;
+        }
+
+        .nav-link.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .nav-link.next {
+            background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+            color: white;
+        }
+
+        .nav-link.next:hover {
+            background: linear-gradient(135deg, #2ea043 0%, #3fb950 100%);
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 280px;
+            }
+            .content-area {
+                margin-left: 280px;
+                padding: 24px 32px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .content-area {
+                margin-left: 0;
+                padding: 20px;
+            }
+            .article-title {
+                font-size: 24px;
+            }
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-left">
+            <span class="series-badge">40期系列</span>
+            <span class="header-title">摄像机硬件科普系列</span>
+        </div>
+        <div class="header-right">
+            <span>完成进度 {{CURRENT_ISSUE}}/40 篇</span>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{PROGRESS_PERCENT}}%"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主布局 -->
+    <div class="main-container">
+        <!-- 左侧导航 -->
+        <aside class="sidebar">
+            <div class="sidebar-content">
+                <!-- 模块一：成像基础 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块一 · 成像基础</span>
+                        <span class="module-status">已完成 6/6</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第001期_传感器全解析.html" class="article-link completed">
+                                <span class="article-number">001</span>
+                                <span class="article-title-short">传感器全解析</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第002期_像素与分辨率的真相.html" class="article-link completed">
+                                <span class="article-number">002</span>
+                                <span class="article-title-short">像素与分辨率的真相</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第003期_光学变焦vs数字变焦vsAI超分辨率变焦.html" class="article-link completed">
+                                <span class="article-number">003</span>
+                                <span class="article-title-short">光学变焦vs数字变焦vsAI超分辨率变焦</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第004期_帧率的秘密.html" class="article-link completed">
+                                <span class="article-number">004</span>
+                                <span class="article-title-short">帧率的秘密</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第005期_光圈与景深.html" class="article-link completed">
+                                <span class="article-number">005</span>
+                                <span class="article-title-short">光圈与景深</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第006期_快门与曝光.html" class="article-link completed">
+                                <span class="article-number">006</span>
+                                <span class="article-title-short">快门与曝光</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块二：ISP与图像处理 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块二 · ISP与图像处理</span>
+                        <span class="module-status">已完成 6/6</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第007期_低噪声与高信噪比.html" class="article-link completed">
+                                <span class="article-number">007</span>
+                                <span class="article-title-short">低噪声与高信噪比</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第008期_ISP图像信号处理全解析.html" class="article-link completed">
+                                <span class="article-number">008</span>
+                                <span class="article-title-short">ISP图像信号处理全解析</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第009期_图像效果评判五大参数.html" class="article-link completed">
+                                <span class="article-number">009</span>
+                                <span class="article-title-short">图像效果评判五大参数</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第010期_图像参数调节实战.html" class="article-link completed">
+                                <span class="article-number">010</span>
+                                <span class="article-title-short">图像参数调节实战</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第011期_背光补偿与宽动态.html" class="article-link completed">
+                                <span class="article-number">011</span>
+                                <span class="article-title-short">背光补偿与宽动态</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="摄像机硬件科普_第012期_自动对焦技术.html" class="article-link {{ACTIVE_012}}">
+                                <span class="article-number">012</span>
+                                <span class="article-title-short">自动对焦技术</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块三：云台与电机控制 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块三 · 云台与电机控制</span>
+                        <span class="module-status pending">待开始 0/3</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">013</span>
+                                <span class="article-title-short">云台与PTZ控制</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">014</span>
+                                <span class="article-title-short">预置位与遥控器</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">015</span>
+                                <span class="article-title-short">AI人体追踪技术</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块四：接口与传输 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块四 · 接口与传输</span>
+                        <span class="module-status pending">待开始 0/5</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">016</span>
+                                <span class="article-title-short">视频接口演进史</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">017</span>
+                                <span class="article-title-short">USB2.0 vs USB3.0</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">018</span>
+                                <span class="article-title-short">HDMI与SDI详解</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">019</span>
+                                <span class="article-title-short">网络传输协议实战</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">020</span>
+                                <span class="article-title-short">无线传输与PoE</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块五：编解码与存储 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块五 · 编解码与存储</span>
+                        <span class="module-status pending">待开始 0/3</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">021</span>
+                                <span class="article-title-short">视频压缩原理</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">022</span>
+                                <span class="article-title-short">视频会议协议</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">023</span>
+                                <span class="article-title-short">摄像机存储方案</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块六：音频技术 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块六 · 音频技术</span>
+                        <span class="module-status pending">待开始 0/3</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">024</span>
+                                <span class="article-title-short">音频接口与传输</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">025</span>
+                                <span class="article-title-short">麦克风阵列与波束成形</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">026</span>
+                                <span class="article-title-short">回声消除与AI降噪</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块七：主控芯片深度解析 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块七 · 主控芯片深度解析</span>
+                        <span class="module-status pending">待开始 0/5</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">027</span>
+                                <span class="article-title-short">主控芯片概览</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">028</span>
+                                <span class="article-title-short">Rockchip RK3588/RK3576</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">029</span>
+                                <span class="article-title-short">SigmaStar SSU9383/9386</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">030</span>
+                                <span class="article-title-short">国科GK7608/GK7606</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">031</span>
+                                <span class="article-title-short">为旌Visinex芯片</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块八：镜头与供应链 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块八 · 镜头与供应链</span>
+                        <span class="module-status pending">待开始 0/3</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">032</span>
+                                <span class="article-title-short">镜头厂商生态</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">033</span>
+                                <span class="article-title-short">镜头参数深度解析</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">034</span>
+                                <span class="article-title-short">镜头选型实战</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块九：智能终端与教育应用 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块九 · 智能终端与教育应用</span>
+                        <span class="module-status pending">待开始 0/3</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">035</span>
+                                <span class="article-title-short">UT680一体化智能终端</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">036</span>
+                                <span class="article-title-short">教育录播解决方案</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">037</span>
+                                <span class="article-title-short">双模态产品解析</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 模块十：控制设备与系统方案 -->
+                <div class="module-section">
+                    <div class="module-header">
+                        <span>模块十 · 控制设备与系统方案</span>
+                        <span class="module-status pending">待开始 0/3</span>
+                    </div>
+                    <ul class="article-list">
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">038</span>
+                                <span class="article-title-short">AK030视频会议控制键盘</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">039</span>
+                                <span class="article-title-short">会议摄像机选型指南</span>
+                            </a>
+                        </li>
+                        <li class="article-item">
+                            <a href="#" class="article-link">
+                                <span class="article-number">040</span>
+                                <span class="article-title-short">视频会议系统方案</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右侧内容区 -->
+        <main class="content-area">
+            <article>
+                <header class="article-header">
+                    <div class="article-meta">
+                        <span class="issue-badge">第 {{ISSUE_NUMBER}} 期</span>
+                        <span class="category-tag">{{CATEGORY}}</span>
+                    </div>
+                    <h1 class="article-title">{{ARTICLE_TITLE}}</h1>
+                    <p class="article-subtitle">{{ARTICLE_SUBTITLE}}</p>
+                    <div class="article-tags">
+                        <span class="tag"><span class="tag-icon">📹</span> {{SERIES_NAME}}</span>
+                        <span class="tag"><span class="tag-icon">⭐</span> {{DIFFICULTY}}</span>
+                    </div>
+                </header>
+
+                <div class="article-content">
+                    {{ARTICLE_CONTENT}}
+                </div>
+
+                <footer class="article-footer">
+                    <a href="{{PREV_LINK}}" class="nav-link {{PREV_DISABLED}}">
+                        <span>←</span>
+                        <span>上一篇：{{PREV_TITLE}}</span>
+                    </a>
+                    <a href="{{NEXT_LINK}}" class="nav-link next {{NEXT_DISABLED}}">
+                        <span>下一篇：{{NEXT_TITLE}}</span>
+                        <span>→</span>
+                    </a>
+                </footer>
+            </article>
+        </main>
+    </div>
+</body>
+</html>
